@@ -9,7 +9,9 @@ import mock
 
 from ggrc import db
 from ggrc import models
+from ggrc.models import all_models
 from integration.ggrc.services import TestCase
+from integration.ggrc.models import factories
 
 
 class TestCollectionPost(TestCase):
@@ -242,16 +244,25 @@ class TestCollectionPost(TestCase):
 
     Creates new Person and check modified_by fileds of new Person and Admin"""
     self.client.get("/login")
-    admin = models.Person.query.filter_by(email="user@example.com").first()
-    old_update_at = datetime.datetime(2017, 10, 11, 12, 13, 14)
-    admin.modified_by = None
-    admin.updated_at = old_update_at
-    db.session.commit()
 
+    with factories.single_commit():
+      admin = self.create_user_with_role(role="Administrator")
+      admin_id = admin.id
+      old_update_at = datetime.datetime(2017, 10, 11, 12, 13, 14)
+      admin.modified_by = None
+      admin.updated_at = old_update_at
+
+    admin = all_models.Person.query.get(admin_id)
+    headers = {
+        "X-ggrc-user": json.dumps({
+            "name": admin.name, "email": admin.email
+        })
+    }
+    self.client.get("/login", headers=headers)
     data = json.dumps([{
         "person": {
             "name": "test",
-            "email": "test@example.com",
+            "email": "abc@example.com",
             "context": None,
         },
     }])
@@ -261,9 +272,10 @@ class TestCollectionPost(TestCase):
         data=data,
         headers=self.get_headers(),
     )
+
     self.assert200(response)
-    admin = models.Person.query.filter_by(email="user@example.com").first()
-    new_user = models.Person.query.filter_by(email="test@example.com").first()
+    admin = models.Person.query.filter_by(id=admin_id).first()
+    new_user = models.Person.query.filter_by(email="abc@example.com").first()
     self.assertEqual(admin.updated_at, old_update_at)
     self.assertIsNone(admin.modified_by)
     self.assertEqual(new_user.modified_by_id, admin.id)

@@ -30,17 +30,37 @@ class TestBasicCsvImport(TestCase):
     self.api = api_helper.Api()
     self.client.get("/login")
 
-  def generate_people(self, people):
-    for person in people:
-      self.generator.generate_person({
-          "name": person,
-          "email": "{}@reciprocitylabs.com".format(person),
-      }, "Administrator")
+  def generate_policies(self):
+    """Generate policy objects"""
+    policy_data = [
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "Policy-{}".format(i)),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]) for i in range(3)
+    ]
+    response = self.import_data(*policy_data)
+    return response
+
+  def generate_objectives(self):
+    """Generate Objective type objects"""
+    objective_data = [
+        collections.OrderedDict([
+            ("object_type", "objective"),
+            ("Code*", ""),
+            ("title", "House of cards-{}".format(i)),
+            ("admin", "user@example.com"),
+            ("map:facility", "HOUSE-{}".format(i)),
+        ]) for i in range(1, 5)
+    ]
+    response = self.import_data(*objective_data)
+    return response
 
   def test_policy_basic_import(self):
     """Test basic policy import."""
-    filename = "policy_basic_import.csv"
-    self.import_file(filename)
+    self.generate_policies()
     policies = models.Policy.query.count()
     self.assertEqual(policies, 3)
     revisions = models.Revision.query.filter(
@@ -62,28 +82,47 @@ class TestBasicCsvImport(TestCase):
       owner = models.Person.query.filter_by(email="user@example.com").first()
       self.assert_roles(policy, Admin=owner)
 
-    filename = "policy_import_working_with_warnings.csv"
-    response_json = self.import_file(filename, safe=False)
+    self.import_data(collections.OrderedDict([
+        ("object_type", "Policy"),
+        ("Code*", ""),
+        ("Title*", "Policy3"),
+        ("Admin*", "user@example.com"),
+        ("State*", "Draft"),
+    ]))
+    self.import_data(collections.OrderedDict([
+        ("object_type", "Policy"),
+        ("Code*", ""),
+        ("Title*", "Policy4"),
+        ("Admin*", "user@example.com"),
+        ("State*", "Draft"),
+    ]))
+    policy3 = models.Policy.query.filter_by(title="Policy3").first()
+    response = [
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", policy3.slug),
+            ("Title*", "Policy3"),
+            ("Admin", "miha@policy.com"),
+            ("State*", "Draft"),
+        ])
+    ]
+    response_json = self.import_data(*response)
 
     expected_warnings = {
         errors.UNKNOWN_USER_WARNING.format(line=3, email="miha@policy.com"),
-        errors.UNKNOWN_OBJECT.format(
-            line=3, object_type="Program", slug="p753"),
-        errors.OWNER_MISSING.format(line=4, column_name="Admin"),
-        errors.UNKNOWN_USER_WARNING.format(line=6, email="not@a.user"),
-        errors.OWNER_MISSING.format(line=6, column_name="Admin"),
+        errors.OWNER_MISSING.format(line=3, column_name="Admin"),
     }
     response_warnings = response_json[0]["row_warnings"]
     self.assertEqual(expected_warnings, set(response_warnings))
     response_errors = response_json[0]["row_errors"]
     self.assertEqual(set(), set(response_errors))
-    self.assertEqual(4, response_json[0]["created"])
+    self.assertEqual(1, response_json[0]["updated"])
 
     policies = models.Policy.query.all()
-    self.assertEqual(len(policies), 4)
+    self.assertEqual(len(policies), 2)
     # Only 1 and 3 policies should have owners
     test_owners(policies[0])
-    test_owners(policies[2])
+    test_owners(policies[1])
 
   def test_policy_same_titles(self):
     """Test Policy imports with title collisions."""
@@ -94,10 +133,73 @@ class TestBasicCsvImport(TestCase):
                        policy.access_control_list[0][0].email)
       owner = models.Person.query.filter_by(email="user@example.com").first()
       self.assert_roles(policy, Admin=owner)
+    policy_template = [
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A different title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A different title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A different title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A totally different title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "A title"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ])
+    ]
 
-    filename = "policy_same_titles.csv"
-    response_json = self.import_file(filename, safe=False)
-
+    response_json = self.import_data(*policy_template)
     self.assertEqual(3, response_json[0]["created"])
     self.assertEqual(6, response_json[0]["ignored"])
     self.assertEqual(0, response_json[0]["updated"])
@@ -120,11 +222,8 @@ class TestBasicCsvImport(TestCase):
             line="7", processed_line="5", column_name="Title",
             value="A different title"),
         errors.DUPLICATE_VALUE_IN_CSV.format(
-            line="9", processed_line="8", column_name="Code", value="code"),
-        errors.DUPLICATE_VALUE_IN_CSV.format(
-            line="10", processed_line="8", column_name="Code", value="code"),
-        errors.DUPLICATE_VALUE_IN_CSV.format(
-            line="11", processed_line="8", column_name="Code", value="code"),
+            line="8", processed_line="5", column_name="Title",
+            value="A different title"),
     }
     response_errors = response_json[0]["row_errors"]
     self.assertEqual(expected_errors, set(response_errors))
@@ -134,18 +233,29 @@ class TestBasicCsvImport(TestCase):
     for policy in policies:
       test_owners(policy)
 
-  @ddt.data(['Standard', ('Regulation', 'Policy', 'Contract', 'Requirement'),
-             {"Standard": ["map:standard"]}],
-            ['Regulation', ('Standard', 'Policy', 'Contract', 'Requirement'),
-             {"Regulation": ["map:regulation"]}],
-            ['Policy', ('Regulation', 'Standard', 'Contract', 'Requirement'),
-             {"Policy": ["map:policy"]}],
-            ['Requirement', ('Regulation', 'Policy', 'Contract', 'Standard'),
-             {}],
-            ['Contract', ('Regulation', 'Policy', 'Standard', 'Requirement'),
-             {"Contract": ["map:contract"]}])
+  @ddt.data(['Standard', 'Regulation'],
+            ['Standard', 'Policy'],
+            ['Standard', 'Contract'],
+            ['Standard', 'Requirement'],
+            ['Regulation', 'Standard'],
+            ['Regulation', 'Policy'],
+            ['Regulation', 'Contract'],
+            ['Regulation', 'Requirement'],
+            ['Policy', 'Regulation'],
+            ['Policy', 'Contract'],
+            ['Policy', 'Requirement'],
+            ['Policy', 'Standard'],
+            ['Requirement', 'Regulation'],
+            ['Requirement', 'Contract'],
+            ['Requirement', 'Policy'],
+            ['Requirement', 'Standard'],
+            ['Contract', 'Requirement'],
+            ['Contract', 'Contract'],
+            ['Contract', 'Policy'],
+            ['Contract', 'Standard'],
+            )
   @ddt.unpack
-  def test_map_core_objects(self, check_object, other_objects, block_warnings):
+  def test_map_core_objects(self, check_object, other_objects):
     """Ensure that core GRC objects correctly map to each other
 
     Core objects to test are:
@@ -154,57 +264,61 @@ class TestBasicCsvImport(TestCase):
     * Policy
     * Requirement
     * Contract
+    """
+    obj = factories.get_model_factory(other_objects)
 
-    CANNOT be mapped the following pairs:
+    # Create object
+    new_object = obj(title='Test Title')
+    data = [
+        OrderedDict([
+            ("object_type", check_object),
+            ("Code*", ""),
+            ("Title*", "{}-1".format(check_object)),
+            ("Admin*", "user@example.com"),
+            ("map:" + other_objects.lower(), new_object.slug)
+        ])
+    ]
+    response = self.import_data(*data)
+    self.assertEqual(response[0]["row_errors"], [])
+
+  @ddt.data(['Standard', 'Standard', {"Standard": ["map:standard"]}],
+            ['Policy', 'Policy', {"Policy": ["map:policy"]}],
+            ['Contract', 'Contract', {"Contract": ["map:contract"]}],
+            ['Requirement', 'Requirement', {}],
+            ['Regulation', 'Regulation', {"Regulation": ["map:regulation"]}],
+            ['Standard', 'Standard', {"Standard": ["map:standard"]}],
+            )
+  @ddt.unpack
+  def test_map_core_objects_warnings(self, check_object, other_objects,
+                                     block_warnings):
+    """
+    Test to check that the following pairs cannot be mapped:
     * Standard to Standard
     * Regulation to Regulation
     * Policy to Policy
     * Contract to Contract
     (however, Requirement CAN be mapped to Requirement)
     """
+    obj = factories.get_model_factory(other_objects)
 
-    data_block = [
-        OrderedDict([
-            ("object_type", obj_type),
-            ("Code*", "{}-1".format(obj_type.upper())),
-            ("Title*", "{}-1".format(obj_type)),
-            ("Admin*", "user@example.com"),
-        ]) for obj_type in other_objects
-    ]
-
-    # Add object to check
-    data_block.extend([
+    # Create object
+    new_object = obj(title='Test Title')
+    data = [
         OrderedDict([
             ("object_type", check_object),
-            ("Code*", "{}-1".format(check_object.upper())),
+            ("Code*", ""),
             ("Title*", "{}-1".format(check_object)),
             ("Admin*", "user@example.com"),
-            ("map:regulation", ""),
-            ("map:policy", ""),
-            ("map:contract", ""),
-            ("map:requirement", ""),
-            ("map:standard", ""),
-        ]),
-        OrderedDict([
-            ("object_type", check_object),
-            ("Code*", "{}-2".format(check_object.upper())),
-            ("Title*", "{}-2".format(check_object)),
-            ("Admin*", "user@example.com"),
-            ("map:regulation", "REGULATION-1"),
-            ("map:policy", "POLICY-1"),
-            ("map:contract", "CONTRACT-1"),
-            ("map:requirement", "REQUIREMENT-1"),
-            ("map:standard", "STANDARD-1"),
-        ]),
-    ])
-
-    response = self.import_data(*data_block)
+            ("map:" + other_objects.lower(), new_object.slug)
+        ])
+    ]
+    response = self.import_data(*data)
 
     self._check_csv_response(response, {
         obj_type: {
             "block_warnings": {
                 errors.UNSUPPORTED_MAPPING.format(
-                    line=18,
+                    line=2,
                     obj_a=obj_type,
                     obj_b=warn_column.split(":", 1)[1].title(),
                     column_name=warn_column
@@ -215,33 +329,87 @@ class TestBasicCsvImport(TestCase):
 
   def test_policy_unique_title(self):
     """Test import of existing policy."""
-    filename = "policy_sample1.csv"
-    response_json = self.import_file(filename)
-
-    self.assertEqual(response_json[0]["row_errors"], [])
-
-    filename = "policy_sample2.csv"
-    response_json = self.import_file(filename, safe=False)
+    policy_data = [
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "will this work"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Policy"),
+            ("Code*", ""),
+            ("Title*", "will this work"),
+            ("Admin*", "user@example.com"),
+            ("State*", "Draft"),
+        ])
+    ]
+    response_json = self.import_data(*policy_data)
 
     self.assertEqual(response_json[0]["row_errors"], [
-        "Line 3: title 'will this work' already exists.Record will be ignored."
+        "Line 4 has the same Title 'will this work' as 3."
+        " The line will be ignored."
     ])
 
   def test_assessments_import_update(self):
     """Test for updating Assessment with import
 
-    Checks for fields being updarted correctly
+    Checks for fields being updated correctly
     """
-    self.import_file("pci_program.csv")
+    factories.PersonFactory(name="Anze",
+                            email="anze@reciprocitylabs.com")
+    factories.PersonFactory(name="Albert",
+                            email="albert@reciprocitylabs.com")
+    factories.AuditFactory(slug="AUDIT-Consolidated")
+    audit1 = factories.AuditFactory(slug="AUDIT-Test")
 
-    assessment = models.Assessment.query.filter_by(slug="CA.PCI 1.1").first()
+    self.import_data(collections.OrderedDict([
+        ("object_type", "Assessment"),
+        ("Code*", ""),
+        ("Audit", audit1.slug),
+        ("Title", "PCI 1.1 Firewall and Router Configuration assessment"),
+        ("Creators", "anze@reciprocitylabs.com"),
+        ("Assignees", "anze@reciprocitylabs.com"),
+        ("State", "Not Started"),
+        ("Conclusion: Design", "Effective"),
+        ("Conclusion: Operation", "Effective"),
+    ]),
+        collections.OrderedDict([
+            ("object_type", "Assessment"),
+            ("Code*", ""),
+            ("Audit", audit1.slug),
+            ("Title", "PCI 1.2 Firewall and Router Connections Configuration"),
+            ("Creators", "anze@reciprocitylabs.com"),
+            ("Assignees", "anze@reciprocitylabs.com"),
+            ("State", "Not Started"),
+            ("Conclusion: Design", "Effective"),
+            ("Conclusion: Operation", "Effective"),
+        ]))
+
+    assessment = models.Assessment.query.filter_by(
+        title="PCI 1.1 Firewall and Router Configuration assessment").first()
     audit = models.Audit.query.filter_by(slug="AUDIT-Consolidated").first()
     self.assertEqual(assessment.design, "Effective")
     self.assertEqual(assessment.operationally, "Effective")
     self.assertIsNone(models.Relationship.find_related(assessment, audit))
 
-    response = self.import_file("pci_program_update.csv", safe=False)
-
+    assessment = models.Assessment.query.filter_by(
+        title="PCI 1.2 Firewall and Router Connections Configuration").first()
+    slug = assessment.slug
+    audit_slug = audit.slug
+    aud_data = collections.OrderedDict([
+        ("object_type", "Assessment"),
+        ("Code*", slug),
+        ("Audit", audit_slug),
+        ("Title", "PCI 1.1 Firewall and Router Connections Configuration"),
+        ("Creators", "albert@reciprocitylabs.com"),
+        ("Assignees", "albert@reciprocitylabs.com"),
+        ("State", "Not Started"),
+        ("Conclusion: Design", "Needs improvement"),
+        ("Conclusion: Operation", "Ineffective"),
+    ])
+    response = self.import_data(aud_data)
     self._check_csv_response(response, {
         "Assessment": {
             "row_warnings": {
@@ -250,50 +418,91 @@ class TestBasicCsvImport(TestCase):
         }
     })
 
-    assessment = models.Assessment.query.filter_by(slug="CA.PCI 1.1").first()
-    audit = models.Audit.query.filter_by(slug="AUDIT-Consolidated").first()
+    assessment = models.Assessment.query.filter_by(slug=slug).first()
+    audit = models.Audit.query.filter_by(slug=audit_slug).first()
     self.assertEqual(assessment.design, "Needs improvement")
     self.assertEqual(assessment.operationally, "Ineffective")
     self.assertIsNone(models.Relationship.find_related(assessment, audit))
 
   def test_person_imports(self):
     """Test imports for Person object with user roles."""
-    filename = "people_test.csv"
-    response = self.import_file(filename, safe=False)[0]
-
+    no_name = [
+        collections.OrderedDict([
+            ("object_type", "Person"),
+            ("Name*", ""),
+            ("Email", "user14@example.com"),
+            ("Role", "Administrator"),
+        ]),
+    ]
+    no_name_data = self.import_data(*no_name)
     expected_errors = {
-        errors.MISSING_VALUE_ERROR.format(line=8, column_name="Email"),
-        errors.MISSING_VALUE_ERROR.format(line=9, column_name="Name"),
-        errors.WRONG_VALUE_ERROR.format(line=10, column_name="Email"),
-        errors.WRONG_VALUE_ERROR.format(line=11, column_name="Email"),
-    }
+        errors.MISSING_VALUE_ERROR.format(line=3, column_name="Name")}
+    self.assertEqual(expected_errors, set(no_name_data[0]["row_errors"]))
 
-    self.assertEqual(expected_errors, set(response["row_errors"]))
+    bad_email = [
+        collections.OrderedDict([
+            ("object_type", "Person"),
+            ("Name*", "bad emil"),
+            ("Email", "bad email dot com"),
+        ]),
+    ]
+    bad_email_data = self.import_data(*bad_email)
+    expected_errors = {
+        errors.WRONG_VALUE_ERROR.format(line=3, column_name="Email")}
+    self.assertEqual(expected_errors, set(bad_email_data[0]["row_errors"]))
+
     self.assertEqual(0, models.Person.query.filter_by(email=None).count())
 
   def test_duplicate_people(self):
     """Test adding two of the same object people objects in the same row."""
-    filename = "duplicate_object_person.csv"
-    response = self.import_file(filename)[0]
+    user_data = [
+        collections.OrderedDict([
+            ("object_type", "Person"),
+            ("name", "TestUser"),
+            ("email", "user@example.com"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Person"),
+            ("name", "TestUser2"),
+            ("email", "user@example.com"),
+        ]),
+    ]
 
-    self.assertEqual(0, len(response["row_warnings"]))
-    self.assertEqual(0, len(response["row_errors"]))
+    response = self.import_data(*user_data)
+
+    self.assertEqual(0, len(response[0]["row_warnings"]))
+    self.assertEqual(1, len(response[0]["row_errors"]))
 
   def test_duplicate_people_objective(self):
     """Test duplicate error that causes request to fail."""
     self.generator.generate_object(models.Objective, {"slug": "objective1"})
-    filename = "duplicate_object_person_objective_error.csv"
-    response = self.import_file(filename)[0]
 
-    self.assertEqual(0, len(response["row_warnings"]))
-    self.assertEqual(0, len(response["row_errors"]))
+    program_data = [
+        collections.OrderedDict([
+            ("object_type", "Program"),
+            ("Title", "TestUser"),
+            ("Code", ""),
+            ("Program Managers", "user@example.com"),
+        ]),
+        collections.OrderedDict([
+            ("object_type", "Program"),
+            ("Title", "TestUser2"),
+            ("Code", ""),
+            ("Program Managers", "user@example.com"),
+            ("map:objective", "objective1"),
+        ]),
+    ]
+    response = self.import_data(*program_data)
+
+    self.assertEqual(0, len(response[0]["row_warnings"]))
+    self.assertEqual(0, len(response[0]["row_errors"]))
 
   def test_audit_import_context(self):
     """Test audit context on edits via import."""
     factories.ProgramFactory(slug="p")
     response = self.import_data(OrderedDict([
         ("object_type", "Audit"),
-        ("Code*", "audit"),
+        ("Code*", ""),
         ("title", "audit"),
         ("Audit Captains", "user@example.com"),
         ("state", "In Progress"),
@@ -302,12 +511,13 @@ class TestBasicCsvImport(TestCase):
     self._check_csv_response(response, {})
 
     audit = models.Audit.query.first()
+    slug = audit.slug
     program = models.Program.query.first()
     self.assertNotEqual(audit.context_id, program.context_id)
 
     response = self.import_data(OrderedDict([
         ("object_type", "Audit"),
-        ("Code*", "audit"),
+        ("Code*", slug),
         ("title", "audit"),
         ("Audit Captains", "user@example.com"),
         ("state", "In Progress"),
@@ -321,16 +531,29 @@ class TestBasicCsvImport(TestCase):
 
   def test_import_with_code_column(self):
     """Test import csv with 'Code' column."""
-    file_name = "import_with_code_column.csv"
-    response = self.import_file(file_name)
+    program_data = [
+        collections.OrderedDict([
+            ("object_type", "Program"),
+            ("Title", "TestUser2345678"),
+            ("Code", "program-1"),
+            ("Program Managers", "user@example.com"),
+        ])
+    ]
+    response = self.import_data(*program_data)
 
     self.assertEqual(response[0]["created"], 1)
     self.assertEqual(response[0]["block_errors"], [])
 
   def test_import_without_code_column(self):
     """Test error message when trying to import csv without 'Code' column."""
-    file_name = "import_without_code_column.csv"
-    response = self.import_file(file_name, safe=False)
+    program_data = [
+        collections.OrderedDict([
+            ("object_type", "Program"),
+            ("Title", "TestUser2345678"),
+            ("Program Managers", "user@example.com"),
+        ])
+    ]
+    response = self.import_data(*program_data)
 
     self.assertEqual(response[0]["created"], 0)
     self.assertEqual(response[0]["block_errors"], [
@@ -360,50 +583,15 @@ class TestBasicCsvImport(TestCase):
     and check correct lines numbering"""
     file_name = "import_empty_lines.csv"
     response = self.import_file(file_name, safe=False)
-    results = {r["name"]: r for r in response}
     expected = {
-        "Person": {
-            "created": 4,
-            "ignored": 0,
-            "row_errors": 0,
-            "row_warnings": 0,
-            "rows": 4,
-        },
-        "Audit": {
-            "created": 2,
-            "ignored": 0,
-            "row_errors": 0,
-            "row_warnings": 1,
-            "rows": 2,
-        },
         "Program": {
             "created": 2,
-            "ignored": 0,
-            "row_errors": 0,
-            "row_warnings": 1,
+            "row_errors": [],
+            "row_warnings": [],
             "rows": 2,
-        },
+        }
     }
-    for name, data in expected.items():
-      result = results[name]
-      result_dict = {
-          "created": result["created"],
-          "ignored": result["ignored"],
-          "row_errors": len(result["row_errors"]),
-          "row_warnings": len(result["row_warnings"]),
-          "rows": result["rows"],
-      }
-      self.assertDictEqual(
-          result_dict,
-          data,
-          u"Numbers don't match for {}: expected {!r}, got {!r}".format(
-              name,
-              data,
-              result_dict,
-          ),
-      )
-      self.assertIn(u"Line 16", results["Program"]["row_warnings"][0])
-      self.assertIn(u"Line 21", results["Audit"]["row_warnings"][0])
+    self._check_csv_response(response, expected)
 
   def test_import_hook_error(self):
     """Test errors in import"""
@@ -422,7 +610,7 @@ class TestBasicCsvImport(TestCase):
     folder_id = '1WXB8oulc68ZWdFhX96Tv1PBLi8iwALR3'
     response = self.import_data(OrderedDict([
         ("object_type", "Program"),
-        ("Code*", "program-1"),
+        ("Code*", ""),
         ("Program managers", "user@example.com"),
         ("Title", "program-1"),
         ("GDrive Folder ID", folder_id)
@@ -444,12 +632,11 @@ class TestBasicCsvImport(TestCase):
   def test_document_recipients(self, object_type):
     """Test check admin recipients for document created via import"""
     title = 'program 1'
-    user = factories.PersonFactory()
     response = self.import_data(OrderedDict([
         ("object_type", object_type),
         ("Code*", ""),
         ("title", title),
-        ("Admin", user.email),
+        ("Admin", "user@example.com"),
         ("reference url", "http://someurl.html")
     ]))
 
@@ -460,12 +647,11 @@ class TestBasicCsvImport(TestCase):
   def test_document_recipients_issue(self):
     """Test check admin recipients for document created via import issue"""
     title = 'program 1'
-    user = factories.PersonFactory()
     response = self.import_data(OrderedDict([
         ("object_type", 'Issue'),
         ("Code*", ""),
         ("title", title),
-        ("Admin", user.email),
+        ("Admin", "user@example.com"),
         ("reference url", "http://someurl.html"),
         ("Due Date", "07/30/2019")
     ]))
@@ -482,19 +668,19 @@ class TestImportPermissions(TestCase):
   def setUp(self):
     super(TestImportPermissions, self).setUp()
     self.api = api_helper.Api()
+    self.user = factories.PersonFactory()
 
   def test_import_permissions(self):
     """Test that permissions aren't recalculated during import new objects."""
     with factories.single_commit():
       audit = factories.AuditFactory(slug="audit-1")
       market = factories.MarketFactory()
-      user = factories.PersonFactory()
       system_role = all_models.Role.query.filter(
           all_models.Role.name == "Creator"
       ).one()
-      rbac_factories.UserRoleFactory(role=system_role, person=user)
-      audit.add_person_with_role_name(user, "Audit Captains")
-      market.add_person_with_role_name(user, "Admin")
+      rbac_factories.UserRoleFactory(role=system_role, person=self.user)
+      audit.add_person_with_role_name(self.user, "Audit Captains")
+      market.add_person_with_role_name(self.user, "Admin")
     self._create_snapshots(audit, [market])
 
     data = [
@@ -509,13 +695,13 @@ class TestImportPermissions(TestCase):
         ]) for i in range(10)
     ]
 
-    self.api.set_user(user)
+    self.api.set_user(self.user)
 
     with mock.patch(
         "ggrc_basic_permissions.load_access_control_list",
         side_effect=ggrc_basic_permissions.load_access_control_list
     ) as acl_loader:
-      response = self.api.run_import_job(user, "Assessment", data)
+      response = self.api.run_import_job(self.user, "Assessment", data)
       self.assert200(response)
       # 10 Assessments should be created in import
       self.assertEqual(all_models.Assessment.query.count(), 10)
@@ -525,19 +711,19 @@ class TestImportPermissions(TestCase):
   def test_permissions_cleared(self):
     """Test that permissions where cleared after import."""
     with factories.single_commit():
-      user = factories.PersonFactory()
-      user_id = user.id
+      self.user = factories.PersonFactory()
+      user_id = self.user.id
       market = factories.MarketFactory(slug="test market")
       system_role = all_models.Role.query.filter(
           all_models.Role.name == "Creator"
       ).one()
-      rbac_factories.UserRoleFactory(role=system_role, person=user)
-      market.add_person_with_role_name(user, "Admin")
+      rbac_factories.UserRoleFactory(role=system_role, person=self.user)
+      market.add_person_with_role_name(self.user, "Admin")
 
     user_perm_key = 'permissions:{}'.format(user_id)
 
     # Recalculate permissions under new user
-    self.api.set_user(user)
+    self.api.set_user(self.user)
     self.api.client.get("/permissions")
 
     perm_ids = self.memcache_client.get('permissions:list')
@@ -553,7 +739,7 @@ class TestImportPermissions(TestCase):
             ("map:market", "test market"),
         ])
     ]
-    response = self.api.run_import_job(user, "Objective", data)
+    response = self.api.run_import_job(self.user, "Objective", data)
     self.assert200(response)
     self.assertEqual(all_models.Objective.query.count(), 1)
 

@@ -9,11 +9,11 @@ Person,name,email,company,role,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 Object type,,,,,,,,,,,,,,,
 Program,Code*,Title*,Program Managers,,,,,,,,,,,,
-,Program,Program,user@example.com,,,,,,,,,,,,
+,,Program,user@example.com,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 Object type,,,,,,principal assignee,,,,,,,,,
 Audit,Code*,Program*,Title*,Audit Captains*,State,,,,,,,,,,
-,Audit,Program,Audit,user@example.com,Planned,,,,,,,,,,
+,,Program,Audit,user@example.com,Planned,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 Object type,,,,,Only works if default assessment type is Control.,,,,"List of custom attributes for the assessment template
@@ -27,16 +27,16 @@ list of attribute values: comma separetd list, only used if attribute type is ""
 
 Limitations: Dropdown values can not start with either ""(a)"" or ""(c)"" and attribute names can not contain commas "","".",,,,,,
 Assessment Template,Code,Audit,Title,Default assessment type,Use control assessment procedure,Default Assessment Procedure,Default Assignees,Default Verifiers,Custom Attributes,,,,,,
-,T-1,Audit,Template 1,Control,yes,this will be ignored,Object admins,Auditors,"Text, my text name
+,,Audit,Template 1,Control,yes,this will be ignored,Object admins,Auditors,"Text, my text name
 mandatory Text, Some Other text name
 Rich text, custom description
 Mandatory Date, date of birth
 Checkbox, dashie?
 peRson, santa clause",,,,,,
-,T-2,Audit,Template 2,Control,,Some test plan,Audit Captain,"user3@a.com
+,,Audit,Template 2,Control,,Some test plan,Audit Captain,"user3@a.com
 user1@a.com",,,,,,,
-,T-3,Audit,Template 2,Market,,Market test plan,principal assignees,primary contacts,"Dropdown, my dropdown, value 1, value 2, value 3
+,,Audit,Template 2,Market,,Market test plan,principal assignees,primary contacts,"Dropdown, my dropdown, value 1, value 2, value 3
 mandatory dropdown, my second dropdown, value1, value2
 Dropdown, dropdown with mandatory attachments and comments, (a) value1, (a)(c) value 2, (c)  (a)  value3, (c) value cc, valueeee",,,,,,
-,T-4,Audit,Template 3,Org Group,yes,Control test plan value will be ignored,principal assignees,primary contacts,,,,,,,
+,,Audit,Template 3,Org Group,yes,Control test plan value will be ignored,principal assignees,primary contacts,,,,,,,
 ,,,,,,,,,,,,,,,

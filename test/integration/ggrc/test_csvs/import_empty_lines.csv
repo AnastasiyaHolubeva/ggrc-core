@@ -1,26 +1,12 @@
 ,,,,,,,,,,,,
-Object type,,,,,,,,,,,,
-Person,name,email,company,role,,,,,,,,
-,user 1,user1@example.com,google,,,,,,,,,
-,user 2,user2@example.com,google,,,,,,,,,
-,user 11,user11@example.com,google,,,,,,,,,
-,user 12,user12@example.com,google,,,,,,,,,
-,,,,,,,,,,,,
-,,,,,,,,,,,,
-,,,,,,,,,,,,
-,,,,,,,,,,,,
 Object type,"Must be unique. Can be left empty for autogeneration. If updating or deleting, code is required",Mandatory field,,"if owner is not provided, current user will be reated as owner of the object",Default value 'draft' is selected Other values are: Final Effective Ineffective Launched Not Launched In Scope Not in Scope Deprecated,,,,MM/DD/YYYY,MM/DD/YYYY,,
 program,code*,title*,description,Program Managers*,state*,primary contacts,secondary contacts,effective date,notes,reference url,Program Editors,Program Readers
-,prog-1,program 1,test,"user1@example.com
-user11@example.com",Draft,user1@example.com,user2@example.com,7/1/2015,this is a note,google.com,user11@example.com,user12@example.com
+,,program 1,test,"user@example.com
+user@example.com",Draft,user@example.com,user@example.com,7/1/2015,this is a note,google.com,user@example.com,user@example.com
 ,,,,,,,,,,,,
-,prog-2,program 2,test,user2@example.com,Active,user1@example.com,user2@example.com,7/1/2015,this is a note,google.com,"user11@example.com
-user12@example.com
-",invalid@example.com
 ,,,,,,,,,,,,
-Object type,"Must be unique. Can be left empty for autogeneration. If updating or deleting, code is required",Mandatory field,,,Mapping is mandatory as Audit needs to be associated with some Program,"For a new audit, Status is always 'planned' by default",,,,,,
-Audit,code*,title*,description,Audit Captains*,Program*,State,Planned Start Date,,Auditors,evidence url,,
 ,,,,,,,,,,,,
-,Aud-1,Aud-1,test,user2@example.com,prog-1,Planned,7/1/2015,,invalid@example.com,http://i.imgur.com/Lppr247.jpg,,
+,,program 2,test,user@example.com,Active,user@example.com,user@example.com,7/1/2015,this is a note,google.com,"user@example.com
+user@example.com
+",user@example.com
 ,,,,,,,,,,,,
-,Aud-2,Aud-2,test,user1@example.com,prog-2,Planned,7/1/2015,,user1@example.com,http://i.imgur.com/Lppr347.jpg,,
