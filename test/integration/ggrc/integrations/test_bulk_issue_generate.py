@@ -237,6 +237,15 @@ class TestBulkIssuesSync(TestCase):
 class TestBulkIssuesGenerate(TestBulkIssuesSync):
   """Test bulk issues generation."""
 
+  @mock.patch.dict(
+      "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+      {
+          "issue_component_id": 1111111,
+          "issue_hotlist_id": 2222222,
+          "component_id": 3333333,
+          "hotlist_id": 4444444,
+      }
+  )
   @ddt.data("Assessment", "Issue")
   def test_integration_disabled_on_bulk_create_error(self, model):
     """Test if {} integration was disabled if bulk creation failed"""
@@ -773,6 +782,10 @@ class TestBulkIssuesChildGenerate(TestBulkIssuesSync):
         body
     )
 
+  @mock.patch.dict(
+      "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+      {"component_id": 3333333}
+  )
   def test_proper_revisions_creation(self):
     """Test all revisions are created for new IssuetrackerIssues"""
     with factories.single_commit():

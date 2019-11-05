@@ -93,6 +93,10 @@ class TestAsmtSyncJob(ggrc.TestCase):
     body["status"] = constants.STATUSES_MAPPING.get(body["status"])
     return str(issue_id), body
 
+  @mock.patch.dict(
+      'ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES',
+      {"component_id": 333333}
+  )
   @ddt.data(True, False)
   def test_assignee_people_sync(self, people_sync_enabled, update_issue_mock):
     """Test sync of Assignees when people_sync_enabled is on/off."""
@@ -115,6 +119,10 @@ class TestAsmtSyncJob(ggrc.TestCase):
 
     update_issue_mock.assert_called_once_with(*expected_upd_args)
 
+  @mock.patch.dict(
+      'ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES',
+      {"component_id": 333333}
+  )
   @ddt.data(True, False)
   def test_captains_people_sync_on(self, people_sync_enabled,
                                    update_issue_mock):

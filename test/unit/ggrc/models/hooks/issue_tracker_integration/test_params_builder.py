@@ -65,12 +65,19 @@ class TestBaseIssueTrackerParamsBuilder(unittest.TestCase):
         expected_result
     )
 
+  @mock.patch.dict(
+      "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+      {
+          "issue_component_id": 111111,
+          "issue_hotlist_id": 222222,
+      }
+  )
   def test_handle_issue_tracker_info_default_values(self):
     """Test handle_issue_tracker_info method set default values.
 
     If we created issue_tracker_issue with missed parameters, we should set
     this parameters with default values. Now we have default values for
-    component_id, hotlist_id, issue_type, priority and severity.
+    issue_type, priority and severity.
     """
     mock_object = mock.MagicMock()
     issue_tracker_info = {

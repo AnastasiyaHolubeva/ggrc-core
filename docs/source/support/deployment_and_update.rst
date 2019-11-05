@@ -158,6 +158,14 @@ Settings from ``settings.sh``
 +------------------------------------+---------------------------------------------------------------------------+
 | CHANGE_REQUEST_URL                 | Link for "Change Request" option on "My Task" page                        |
 +------------------------------------+---------------------------------------------------------------------------+
+| ISSUETRACKER_COMPONENT_ID          | This is the default component id for the Issue                            |
++------------------------------------+---------------------------------------------------------------------------+
+| ISSUETRACKER_HOTLIST_ID            | This is the default hotlist id for Issue                                  |
++------------------------------------+---------------------------------------------------------------------------+
+| ISSUETRACKER_ISSUE_COMPONENT_ID    | This is the default issue component id for the Issue                      |
++------------------------------------+---------------------------------------------------------------------------+
+| ISSUETRACKER_ISSUE_HOTLIST_ID      | This is the default issue hotlist id for Issue                            |
++------------------------------------+---------------------------------------------------------------------------+
 
 Settings from ``override.sh``
 -----------------------------

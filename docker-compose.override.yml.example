@@ -13,6 +13,10 @@ services:
      # Set the following vars to true, to enable mocked issue tracker
      - ISSUE_TRACKER_ENABLED=
      - ISSUE_TRACKER_MOCK=
+     - ISSUETRACKER_COMPONENT_ID=
+     - ISSUETRACKER_HOTLIST_ID=
+     - ISSUETRACKER_ISSUE_HOTLIST_ID=
+     - ISSUETRACKER_ISSUE_COMPONENT_ID=
 
   db:
     tmpfs:

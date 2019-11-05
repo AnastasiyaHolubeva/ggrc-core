@@ -449,6 +449,10 @@ class TestIssueTrackedImport(ggrc.TestCase):
         expected_obj_value,
     )
 
+  @mock.patch.dict(
+      "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+      {"component_id": 333333}
+  )
   @mock.patch.object(settings, "ISSUE_TRACKER_ENABLED", True)
   def test_bulk_create_from_import(self):
     """Test data was imported and tickets were updated using bulk mechanism."""
@@ -1091,6 +1095,10 @@ class TestEnabledViaImport(TestIssueTrackedImport):
     obj = all_models.Issue.query.one()
     self._assert_integration_state(obj, value)
 
+  @mock.patch.dict(
+      "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+      {"component_id": 333333}
+  )
   @ddt.data("In Progress", "Not Started", "Rework Needed")
   @mock.patch.object(settings, "ISSUE_TRACKER_ENABLED", True)
   def test_generation_assmt_allowed_on_update(self, status):
@@ -1229,6 +1237,10 @@ class TestEnabledViaImport(TestIssueTrackedImport):
     self.assertFalse(obj.issue_tracker["enabled"])
 
 
+@mock.patch.dict(
+    "ggrc.integrations.constants.DEFAULT_ISSUETRACKER_VALUES",
+    {"component_id": 333333}
+)
 @ddt.ddt
 @mock.patch("ggrc.integrations.issues.Client.create_issue")
 @mock.patch("ggrc.integrations.issues.Client.update_issue")
