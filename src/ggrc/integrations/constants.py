@@ -3,6 +3,9 @@
 
 """This module contains constants for issue tracker integration."""
 
+from ggrc import settings
+
+
 OBSOLETE_ISSUE_STATUS = "OBSOLETE"
 ISSUE_TRACKED_MODELS = ["Assessment", "Issue"]
 DEFAULT_ISSUETRACKER_VALUES = {
@@ -10,10 +13,10 @@ DEFAULT_ISSUETRACKER_VALUES = {
     'issue_priority': 'P2',
     'issue_severity': 'S2',
     'issue_type': 'PROCESS',
-    'component_id': 188208,
-    'issue_hotlist_id': 1498476,
-    'issue_component_id': 398781,
-    'hotlist_id': 766459,
+    'component_id': settings.ISSUETRACKER_COMPONENT_ID,
+    'issue_hotlist_id': settings.ISSUETRACKER_ISSUE_HOTLIST_ID,
+    'issue_component_id': settings.ISSUETRACKER_ISSUE_COMPONENT_ID,
+    'hotlist_id': settings.ISSUETRACKER_HOTLIST_ID,
 }
 
 INITIAL_COMMENT_TMPL = (
