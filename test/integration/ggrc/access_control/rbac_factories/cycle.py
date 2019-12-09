@@ -13,21 +13,20 @@ from integration.ggrc_workflows.models import factories as wf_factories
 class CycleRBACFactory(base.BaseRBACFactory):
   """Cycle RBAC factory class."""
 
-  def __init__(self, user_id, acr, parent=None):
+  def __init__(self, user_id, acr, parent=None, authorization_user_id=None):
     """Set up objects for Cycle permission tests.
 
     Args:
-        user_id: Id of user under which all operations will be run.
+        user_id: Id of user under which scope objects will be created.
         object_acl: Dict with format: {
         acr: Instance of ACR that should be assigned for tested user.
         parent: Model name in scope of which objects should be set up.
+        authorization_user_id: Id of user to authorization.
     """
     # pylint: disable=unused-argument
     self.setup_workflow_scope(user_id, acr)
     self.api = Api()
-    if user_id:
-      user = all_models.Person.query.get(user_id)
-      self.api.set_user(user)
+    self.setup_user(user_id, authorization_user_id)
 
   def create(self):
     """Create new cycle for Workflow."""

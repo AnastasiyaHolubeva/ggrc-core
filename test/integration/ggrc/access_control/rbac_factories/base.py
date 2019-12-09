@@ -68,6 +68,18 @@ class BaseRBACFactory(object):
     acr = all_models.AccessControlRole.query.get(acr_id)
     self.assign_person(cycle_task, acr, user_id)
 
+  def setup_user(self, user_id, authorization_user_id=None):
+    """Set up user for actions
+    Args:
+        user_id: Id of user under which scope objects created.
+        authorization_user_id: Id of user to authorization.
+    """
+    authorization_id = authorization_user_id or user_id
+    if authorization_id:
+      self.user_id = authorization_id
+      user = all_models.Person.query.get(authorization_id)
+      self.api.set_user(user)
+
   @staticmethod
   def generate_cycle(workflow_id, api=None):
     """Create cycle with task automatically."""

@@ -8,27 +8,28 @@ from ggrc.models import all_models
 from integration.ggrc import Api
 from integration.ggrc.access_control.rbac_factories import base
 from integration.ggrc.models import factories
+from integration.ggrc_basic_permissions.models \
+    import factories as permission_factories
 
 
 class TaskGroupTaskRBACFactory(base.BaseRBACFactory):
   """Task Group Task RBAC factory class."""
 
-  def __init__(self, user_id, acr, parent=None):
+  def __init__(self, user_id, acr, parent=None, authorization_user_id=None):
     """Set up objects for Task Group Task permission tests.
 
     Args:
-        user_id: Id of user under which all operations will be run.
+        user_id: Id of user under which scope objects will be created.
         acr: Instance of ACR that should be assigned for tested user.
         parent: Model name in scope of which objects should be set up.
+        authorization_user_id: Id of user to authorization.
     """
     # pylint: disable=unused-argument
     self.setup_workflow_scope(user_id, acr)
 
     self.api = Api()
 
-    if user_id:
-      user = all_models.Person.query.get(user_id)
-      self.api.set_user(user)
+    self.setup_user(user_id, authorization_user_id)
 
   def create(self):
     """Create new Task Group Task object."""
@@ -74,3 +75,26 @@ class TaskGroupTaskRBACFactory(base.BaseRBACFactory):
           )
       )
     return responses
+
+  def assign(self):
+    """Assign people to Task Group Task object"""
+    with factories.single_commit():
+      user = factories.PersonFactory()
+      permission_factories.UserRoleFactory(
+          role=all_models.Role.query.filter_by(
+              name="Reader"
+          ).first(),
+          person=user
+      )
+    acl_role = all_models.AccessControlRole.query.filter_by(
+        object_type='Workflow',
+        name='Admin'
+    ).first()
+    task = all_models.TaskGroupTask.query.get(self.task_id)
+    return self.api.put(
+        task,
+        {
+            "ac_role_id": acl_role.id,
+            "person": {"id": user.id, "type": "Person"}
+        }
+    )

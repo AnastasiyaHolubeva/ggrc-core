@@ -9,18 +9,22 @@ from ggrc.models import all_models
 from integration.ggrc import Api, generator
 from integration.ggrc.access_control.rbac_factories import base
 from integration.ggrc.models import factories
+from integration.ggrc_basic_permissions.models \
+    import factories as permission_factories
 
 
 class CycleTaskRBACFactory(base.BaseRBACFactory):
   """Cycle Task RBAC factory class."""
 
-  def __init__(self, user_id, acr, parent=None):
+  def __init__(self, user_id, acr, parent=None, authorization_user_id=None):
     """Set up objects for Cycle Task permission tests.
 
     Args:
-        user_id: Id of user under which all operations will be run.
+        user_id: Id of user under which scope objects will be created.
         acr: Instance of ACR that should be assigned for tested user.
         parent: Model name in scope of which objects should be set up.
+        authorization_user_id: Id of user to authorization.
+
     """
     # pylint: disable=unused-argument
     self.setup_workflow_scope(user_id, acr)
@@ -33,11 +37,14 @@ class CycleTaskRBACFactory(base.BaseRBACFactory):
     self.api = Api()
     self.objgen = generator.ObjectGenerator()
     self.objgen.api = self.api
-
-    if user_id:
-      self.user_id = user_id
-      user = all_models.Person.query.get(user_id)
-      self.api.set_user(user)
+    _, self.comment = self.objgen.generate_object(
+        all_models.Comment,
+        {
+            "description": factories.random_str(),
+            "context": None,
+        }
+    )
+    self.setup_user(user_id, authorization_user_id)
 
   def create(self):
     """Create new Cycle Task object."""
@@ -204,3 +211,39 @@ class CycleTaskRBACFactory(base.BaseRBACFactory):
     """Restore Cycle Task."""
     cycle_task = all_models.CycleTaskGroupObjectTask.query.first()
     return self.api.put(cycle_task, {"status": "Assigned"})
+
+  def assign(self):
+    """Assign Cycle Task."""
+    with factories.single_commit():
+      user_obj = factories.PersonFactory()
+      permission_factories.UserRoleFactory(
+          role=all_models.Role.query.filter_by(
+              name="Reader"
+          ).first(),
+          person=user_obj
+      )
+    acl_role_obj = all_models.AccessControlRole.query.filter_by(
+        object_type='Workflow',
+    ).first()
+    cycle_task = all_models.CycleTaskGroupObjectTask.query.get(
+        self.cycle_task_id
+    )
+    return self.api.put(
+        cycle_task,
+        {
+            "ac_role_id": acl_role_obj.id,
+            "person": {"id": user_obj.id, "type": "Person"}
+        }
+    )
+
+  def delete_comment(self):
+    """Delete Comment related to Cycle Task object."""
+    return self.api.delete(self.comment)
+
+  def bulk_update(self):
+    """Bulk update for Cycle Task."""
+    cycle_task = all_models.CycleTaskGroupObjectTask.query.first()
+    return self.api.patch(
+        cycle_task,
+        [{"id": self.cycle_task_id, "state": "In Progress"}]
+    )
