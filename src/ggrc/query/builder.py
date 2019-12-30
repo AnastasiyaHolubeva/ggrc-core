@@ -270,12 +270,40 @@ class QueryHelper(object):
 
 
   @staticmethod
+  def _get_proposal_type_query(model, permission_type):
+    """Filter model based on availability of related objects.
+
+    This method is used for quering proposals related to program
+    include custom roles.
+
+    Args:
+      model: Model for which will be built sqlalchemy filter.
+      permission_type: permission type (e.g. 'update', 'read' and e.t.c.).
+
+    Returns:
+      sqlalchemy filter for proposals related to objects
+        that the user has access to.
+    """
+    allowed_resources = permissions.all_resources(permission_type)
+
+    if not allowed_resources:
+      return sa.false()
+
+    return sa.tuple_(
+      model.instance_type,
+      model.instance_id,
+    ).in_(
+      allowed_resources,
+    )
+
+  @staticmethod
   def _get_type_query(model, permission_type, filter_ids=None):
     """Filter by contexts and resources
 
     Prepare query to filter models based on the available contexts and
     resources for the given type of object.
     """
+    # pylint: disable=too-many-return-statements
     if permission_type == "read" and permissions.has_system_wide_read():
       return None
 
@@ -290,6 +318,9 @@ class QueryHelper(object):
 
     if model.__name__ == "Comment":
       return QueryHelper._get_comments_type_query(model, permission_type)
+
+    if model.__name__ == "Proposal":
+      return QueryHelper._get_proposal_type_query(model, permission_type)
 
     contexts, resources = permissions.get_context_resource(
         model_name=model.__name__, permission_type=permission_type

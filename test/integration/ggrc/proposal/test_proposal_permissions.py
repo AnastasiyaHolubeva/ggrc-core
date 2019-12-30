@@ -191,9 +191,9 @@ class TestPermissions(TestCase):
       # ("ACL_Editor", 1),
       ("ACL_Nobody", 0),
       ("Administrator", 1),
-      ("Program Editors", 0),
-      ("Program Managers", 0),
-      ("Program Readers", 0),
+      ("Program Editors", 1),
+      ("Program Managers", 1),
+      ("Program Readers", 1),
   )
   @ddt.unpack
   def test_query_filter(self, role_name, expected_count):

@@ -82,7 +82,7 @@ class TestOwnerAccess(TestCase, WithQueryApi):
     self.assertEqual(1, len(resp))
     self.assertEqual(resp[0]["Proposal"]["count"], 1)
 
-  def test_nonadmin_has_no_access(self):
+  def test_nonadmin_has_access(self):
     """Test access to proposal for non creator of proposal"""
     role_creator = all_models.Role.query.filter(
         all_models.Role.name == "Creator").one()
@@ -125,11 +125,15 @@ class TestOwnerAccess(TestCase, WithQueryApi):
                                 data=json.dumps(query_data),
                                 headers=headers).json
     self.assertEqual(1, len(resp))
-    self.assertEqual(resp[0]["Proposal"]["count"], 0)
+    self.assertEqual(resp[0]["Proposal"]["count"], 1)
 
-  @ddt.data("Program Readers", "Program Editors")
+  @ddt.data("Program Readers",
+            "Program Editors",
+            "Program Managers",
+            "Primary Contacts",
+            "Secondary Contacts")
   def test_program_read_as_creator(self, program_role):
-    """Test access to proposal for program reader/editor as Creator role"""
+    """Test access to proposal for {0}"""
     with factories.single_commit():
       program = factories.ProgramFactory()
       program_manager = factories.PersonFactory()
@@ -179,5 +183,63 @@ class TestOwnerAccess(TestCase, WithQueryApi):
     resp = self.api.client.post("/query",
                                 data=json.dumps(query_data),
                                 headers=headers).json
+    self.assertEqual(1, len(resp))
+    self.assertEqual(resp[0]["Proposal"]["count"], 1)
+
+  def test_program_new_role_read(self):
+    """Test access to proposal for program newly reader role"""
+    # prepare - create program, assign roles
+    role_name = "Test Read only ACL"
+    with factories.single_commit():
+      factories.AccessControlRoleFactory(
+          name=role_name, update=0, delete=0, object_type="Program")
+      program = factories.ProgramFactory()
+      program_manager = factories.PersonFactory()
+      factories.AccessControlPersonFactory(
+          ac_list=program.acr_name_acl_map["Program Managers"],
+          person=program_manager,
+      )
+      program_id = program.id
+
+    # make query to create proposal by program_manager
+    self.api.set_user(program_manager)
+    self.client.get("/login")
+
+    acr_class = all_models.AccessControlRole
+    acr = acr_class.query.filter(
+        acr_class.name == 'ProposalEditor',
+        acr_class.object_type == 'Proposal'
+    ).one()
+
+    create_data = self._get_create_proposal_request(
+        program_id, acr.id, program_manager.id)
+    self.api.post(all_models.Proposal, create_data)
+
+    query_data = _get_query_proposal_request(program_id)
+    resp = self.api.client.post("/query",
+                                data=json.dumps(query_data),
+                                headers=self.headers).json
+    self.assertEqual(1, len(resp))
+    self.assertEqual(resp[0]["Proposal"]["count"], 1)
+
+    role_creator = all_models.Role.query.filter(
+        all_models.Role.name == "Creator").one()
+
+    # make query to check proposals by Creator role person
+    with factories.single_commit():
+      person = factories.PersonFactory()
+      rbac_factories.UserRoleFactory(role=role_creator, person=person)
+      factories.AccessControlPersonFactory(
+          ac_list=program.acr_name_acl_map[role_name],
+          person=person,
+      )
+
+    self.api.set_user(person)
+    self.client.get("/login")
+
+    query_data = _get_query_proposal_request(program_id)
+    resp = self.api.client.post("/query",
+                                data=json.dumps(query_data),
+                                headers=self.headers).json
     self.assertEqual(1, len(resp))
     self.assertEqual(resp[0]["Proposal"]["count"], 1)
