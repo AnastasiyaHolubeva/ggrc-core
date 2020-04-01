@@ -57,6 +57,7 @@ class TestAccessControlList(TestCase):
     title = factories.random_str(prefix="Control - ")
     control = {
         "control": {
+            "id": factories.SynchronizableId.next(),
             "title": title,
             "type": "Control",
             "context": None,

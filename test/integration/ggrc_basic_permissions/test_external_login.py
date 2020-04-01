@@ -90,6 +90,7 @@ class TestExternalPermissions(TestCase):
     }
 
     if issubclass(model, synchronizable.Synchronizable):
+      model_data["id"] = factories.SynchronizableId.next()
       model_data["external_id"] = factories.SynchronizableExternalId.next()
       model_data["external_slug"] = factories.random_str()
 

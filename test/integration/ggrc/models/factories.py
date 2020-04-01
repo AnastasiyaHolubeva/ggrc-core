@@ -80,11 +80,22 @@ class SynchronizableExternalId:
     return next(cls._value_iterator)
 
 
+class SynchronizableId:
+
+  _value_iterator = iter(xrange(1, sys.maxint))
+
+  @classmethod
+  def next(cls):
+    return next(cls._value_iterator)
+
+
 class TitledFactory(ModelFactory):
   title = factory.LazyAttribute(lambda m: random_str(prefix='title '))
 
 
 class ExternalResourceFactory(ModelFactory):
+  id = factory.LazyAttribute(lambda _:  # pylint: disable=invalid-name
+                                        SynchronizableId.next())
   external_id = factory.LazyAttribute(lambda _:
                                       SynchronizableExternalId.next())
   external_slug = factory.LazyAttribute(lambda _: random_str())
@@ -212,6 +223,8 @@ class ControlFactory(TitledFactory):
   class Meta:
     model = all_models.Control
 
+  id = factory.LazyAttribute(lambda m:  # pylint: disable=invalid-name
+                                        SynchronizableId.next())
   assertions = factory.LazyAttribute(lambda _: '["{}"]'.format(random_str()))
   directive = factory.LazyAttribute(lambda m: RegulationFactory())
   external_id = factory.LazyAttribute(lambda m:
@@ -551,6 +564,8 @@ class RiskFactory(TitledFactory):
   class Meta:
     model = all_models.Risk
 
+  id = factory.LazyAttribute(lambda _:  # pylint: disable=invalid-name
+                                        SynchronizableId.next())
   risk_type = "Some Type"
   description = factory.LazyAttribute(lambda _: random_str(length=100))
   external_id = factory.LazyAttribute(lambda _:

@@ -31,6 +31,7 @@ class TestBaseExternalScopeObjects(TestCase):
     """
     data = {
         model._inflector.table_singular: {
+            "id": 123,
             "title": "new_{}".format(model.__name__),
             "description": "lorem ipsum",
             "notes": "Tests notes for scoped",

@@ -46,6 +46,7 @@ class TestSyncServiceRisk(TestCase):
   def generate_comment_body():
     """Generate JSON body for Risk comment."""
     body = {
+        "id": 1,
         "external_id": 1,
         "external_slug": factories.random_str(),
         "description": "External comment",
@@ -83,7 +84,8 @@ class TestSyncServiceRisk(TestCase):
     self.assert_instance(risk_body, risk)
 
   @ddt.data('review_status',
-            'review_status_display_name')
+            'review_status_display_name',
+            'id')
   # pylint: disable=invalid-name
   def test_create_risk_without_field(self, field):
     """Check risk creation without review_status"""
@@ -95,7 +97,8 @@ class TestSyncServiceRisk(TestCase):
     self.assert400(response)
 
   @ddt.data('review_status',
-            'review_status_display_name')
+            'review_status_display_name',
+            'id')
   # pylint: disable=invalid-name
   def test_create_risk_with_empty_field(self, field):
     """Check risk creation with empty review_status"""

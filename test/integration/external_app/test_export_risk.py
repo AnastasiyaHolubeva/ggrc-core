@@ -55,6 +55,7 @@ class TestExportRisk(query_helper.WithQueryApi, TestCase):
 
     return {
         "risk": {
+            "id": 123,
             "custom_attribute_values": [
                 {
                     "custom_attribute_id": cad_text_id,

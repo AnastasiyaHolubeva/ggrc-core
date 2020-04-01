@@ -116,6 +116,7 @@ class TestFolderField(TestCase):
         self.api.post(model, post_data)
     else:
       if isinstance(obj, Synchronizable):
+        post_data[key]["id"] = 123
         self.api.login_as_external()
 
       resp = self.api.post(model, post_data)

@@ -35,6 +35,7 @@ class TestAccessControlListValidation(TestCase):
     """Test creation of object with wrong ACR in ACL."""
     response = self.api.post(all_models.Control, {
         "control": {
+            "id": 123,
             "title": "Control title",
             "context": None,
             "access_control_list": [{
@@ -122,6 +123,7 @@ class TestMaxACLValidation(TestCase):
     ]
     data = {
         "org_group": {
+            "id": factories.SynchronizableId.next(),
             "external_id": factories.SynchronizableExternalId.next(),
             "external_slug": str(factories.SynchronizableExternalId.next()),
             "title": "org_group title",

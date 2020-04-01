@@ -41,6 +41,7 @@ class TestSoxSystem(TestCase):
     """Test creation of SOX system with non empty acl."""
     response = self.api.post(all_models.System, {
         "system": {
+            "id": 123,
             "title": "new_system",
             "external_id": 1,
             "external_slug": "1111",
@@ -124,6 +125,7 @@ class TestSoxSystem(TestCase):
     """Test creation of new System by external service."""
     data = {
         "system": {
+            "id": 123,
             "title": "new system",
             "external_id": 1,
             "external_slug": "1111",

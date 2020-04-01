@@ -71,6 +71,7 @@ class TestSyncServiceControl(TestCase):
   def generate_minimal_control_body():
     """Generate minimal control body"""
     return {
+        "id": 123,
         "title": factories.random_str(),
         "external_id": factories.SynchronizableExternalId.next(),
         "external_slug": factories.random_str(),
@@ -703,6 +704,7 @@ class TestSyncServiceControl(TestCase):
     control_1 = self.generate_minimal_control_body()
     control_2 = self.generate_minimal_control_body()
     control_2["title"] = control_1["title"]
+    control_2["id"] = 1234
 
     response = self.api.post(all_models.Control, data={
         "control": control_1

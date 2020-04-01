@@ -150,6 +150,7 @@ class ObjectGenerator(Generator):
     """Return dict with fileds which extend Synchronizable object"""
 
     return {
+        'id': factories.SynchronizableId.next(),
         'external_id': factories.SynchronizableExternalId.next(),
         'external_slug': factories.random_str(),
     }

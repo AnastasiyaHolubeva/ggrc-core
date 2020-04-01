@@ -71,6 +71,14 @@ class Synchronizable(ChangesSynchronized,
 
     return value
 
+  @validates('id')
+  def validate_id(self, _, value):  # pylint: disable=no-self-use
+    """Add explicit non-nullable validation."""
+    if value is None:
+      raise ValidationError("ID for the object is not specified")
+
+    return value
+
   @validates('external_slug')
   def validate_external_slug(self, _, value):  # pylint: disable=no-self-use
     """Add explicit non-nullable validation."""
